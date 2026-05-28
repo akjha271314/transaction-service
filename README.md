@@ -108,12 +108,14 @@ POST /accounts
 
 **Request**
 ```json
-{ "document_number": "12345678900" }
+{ "document_number": "12345678900", "credit_limit": 500.0 }
 ```
+
+`credit_limit` is optional and defaults to `0`. An account with `credit_limit: 0` is valid — it means no credit has been extended yet.
 
 **Response** `201 Created`
 ```json
-{ "account_id": 1, "document_number": "12345678900" }
+{ "account_id": 1, "document_number": "12345678900", "credit_limit": 500.0 }
 ```
 
 ---
@@ -126,10 +128,32 @@ GET /accounts/:accountId
 
 **Response** `200 OK`
 ```json
-{ "account_id": 1, "document_number": "12345678900" }
+{ "account_id": 1, "document_number": "12345678900", "credit_limit": 500.0 }
 ```
 
 Returns `404` if the account does not exist.
+
+---
+
+### Update credit limit
+
+```
+PATCH /accounts/:accountId
+```
+
+Updates only the `credit_limit` of an existing account. Must be `>= 0`.
+
+**Request**
+```json
+{ "credit_limit": 1000.0 }
+```
+
+**Response** `200 OK`
+```json
+{ "account_id": 1, "document_number": "12345678900", "credit_limit": 1000.0 }
+```
+
+Returns `400` if the value is negative, `404` if the account does not exist.
 
 ---
 
@@ -155,7 +179,7 @@ POST /transactions
 }
 ```
 
-Returns `422` if the account or operation type does not exist.
+Returns `422` if the account or operation type does not exist, or if the transaction would exceed the account's credit limit.
 
 ---
 

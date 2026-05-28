@@ -12,6 +12,7 @@ var ErrNotFound = errors.New("not found")
 type AccountRepository interface {
 	Create(documentNumber string, creditLimit float64) (*models.Account, error)
 	FindByID(id int64) (*models.Account, error)
+	UpdateCreditLimit(id int64, creditLimit float64) (*models.Account, error)
 }
 
 type accountRepository struct {
@@ -35,6 +36,24 @@ func (r *accountRepository) Create(documentNumber string, creditLimit float64) (
 		return nil, err
 	}
 	return &models.Account{ID: id, DocumentNumber: documentNumber, CreditLimit: creditLimit}, nil
+}
+
+func (r *accountRepository) UpdateCreditLimit(id int64, creditLimit float64) (*models.Account, error) {
+	result, err := r.db.Exec(
+		"UPDATE accounts SET credit_limit = ? WHERE account_id = ?",
+		creditLimit, id,
+	)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return nil, err
+	}
+	if rows == 0 {
+		return nil, ErrNotFound
+	}
+	return r.FindByID(id)
 }
 
 func (r *accountRepository) FindByID(id int64) (*models.Account, error) {

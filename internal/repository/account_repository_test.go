@@ -67,3 +67,31 @@ func TestAccountRepository_FindByID_NotFound(t *testing.T) {
 		t.Errorf("expected ErrNotFound, got %v", err)
 	}
 }
+
+func TestAccountRepository_UpdateCreditLimit(t *testing.T) {
+	db := testutil.NewTestDB(t)
+	repo := NewAccountRepository(db)
+
+	acc, err := repo.Create("12345678900", 100.0)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	updated, err := repo.UpdateCreditLimit(acc.ID, 500.0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if updated.CreditLimit != 500.0 {
+		t.Errorf("expected credit_limit 500.0, got %f", updated.CreditLimit)
+	}
+}
+
+func TestAccountRepository_UpdateCreditLimit_NotFound(t *testing.T) {
+	db := testutil.NewTestDB(t)
+	repo := NewAccountRepository(db)
+
+	_, err := repo.UpdateCreditLimit(999, 500.0)
+	if err != ErrNotFound {
+		t.Errorf("expected ErrNotFound, got %v", err)
+	}
+}

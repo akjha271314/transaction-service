@@ -8,6 +8,7 @@ import (
 type AccountService interface {
 	CreateAccount(documentNumber string, creditLimit float64) (*models.Account, error)
 	GetAccount(id int64) (*models.Account, error)
+	UpdateCreditLimit(id int64, creditLimit float64) (*models.Account, error)
 }
 
 type accountService struct {
@@ -24,4 +25,8 @@ func (s *accountService) CreateAccount(documentNumber string, creditLimit float6
 
 func (s *accountService) GetAccount(id int64) (*models.Account, error) {
 	return s.repo.FindByID(id)
+}
+
+func (s *accountService) UpdateCreditLimit(id int64, creditLimit float64) (*models.Account, error) {
+	return s.repo.UpdateCreditLimit(id, creditLimit)
 }

@@ -16,6 +16,11 @@ definitions:
       operation_type_id:
         type: integer
     type: object
+  handler.UpdateCreditLimitRequest:
+    properties:
+      credit_limit:
+        type: number
+    type: object
   models.Account:
     properties:
       account_id:
@@ -102,6 +107,41 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Get an account
+      tags:
+      - accounts
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountId
+        required: true
+        type: integer
+      - description: New credit limit
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.UpdateCreditLimitRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Account'
+        "400":
+          description: invalid request body
+          schema:
+            type: string
+        "404":
+          description: account not found
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Update credit limit
       tags:
       - accounts
   /transactions:

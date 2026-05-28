@@ -7,8 +7,9 @@ import (
 )
 
 type mockAccountRepo struct {
-	createFn   func(documentNumber string, creditLimit float64) (*models.Account, error)
-	findByIDFn func(id int64) (*models.Account, error)
+	createFn            func(documentNumber string, creditLimit float64) (*models.Account, error)
+	findByIDFn          func(id int64) (*models.Account, error)
+	updateCreditLimitFn func(id int64, creditLimit float64) (*models.Account, error)
 }
 
 func (m *mockAccountRepo) Create(documentNumber string, creditLimit float64) (*models.Account, error) {
@@ -17,6 +18,10 @@ func (m *mockAccountRepo) Create(documentNumber string, creditLimit float64) (*m
 
 func (m *mockAccountRepo) FindByID(id int64) (*models.Account, error) {
 	return m.findByIDFn(id)
+}
+
+func (m *mockAccountRepo) UpdateCreditLimit(id int64, creditLimit float64) (*models.Account, error) {
+	return m.updateCreditLimitFn(id, creditLimit)
 }
 
 type mockTransactionRepo struct {
