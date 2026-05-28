@@ -12,12 +12,12 @@ import (
 )
 
 type mockAccountService struct {
-	createFn func(documentNumber string) (*models.Account, error)
+	createFn func(documentNumber string, creditLimit float64) (*models.Account, error)
 	getFn    func(id int64) (*models.Account, error)
 }
 
-func (m *mockAccountService) CreateAccount(documentNumber string) (*models.Account, error) {
-	return m.createFn(documentNumber)
+func (m *mockAccountService) CreateAccount(documentNumber string, creditLimit float64) (*models.Account, error) {
+	return m.createFn(documentNumber, creditLimit)
 }
 
 func (m *mockAccountService) GetAccount(id int64) (*models.Account, error) {
@@ -34,8 +34,8 @@ func newAccountMux(svc *mockAccountService) *http.ServeMux {
 
 func TestCreateAccount_Success(t *testing.T) {
 	svc := &mockAccountService{
-		createFn: func(documentNumber string) (*models.Account, error) {
-			return &models.Account{ID: 1, DocumentNumber: documentNumber}, nil
+		createFn: func(documentNumber string, creditLimit float64) (*models.Account, error) {
+			return &models.Account{ID: 1, DocumentNumber: documentNumber, CreditLimit: creditLimit}, nil
 		},
 	}
 	mux := newAccountMux(svc)

@@ -13,9 +13,10 @@ import (
 func New(db *sql.DB, cfg *config.Config) http.Handler {
 	accountRepo := repository.NewAccountRepository(db)
 	txRepo := repository.NewTransactionRepository(db)
+	txRunner := repository.NewTxRunner(db)
 
 	accountSvc := service.NewAccountService(accountRepo)
-	txSvc := service.NewTransactionService(txRepo, accountRepo)
+	txSvc := service.NewTransactionService(txRepo, accountRepo, txRunner)
 
 	accountHandler := handler.NewAccountHandler(accountSvc)
 	txHandler := handler.NewTransactionHandler(txSvc)

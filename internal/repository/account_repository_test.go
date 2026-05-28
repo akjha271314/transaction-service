@@ -10,7 +10,7 @@ func TestAccountRepository_Create(t *testing.T) {
 	db := testutil.NewTestDB(t)
 	repo := NewAccountRepository(db)
 
-	acc, err := repo.Create("12345678900")
+	acc, err := repo.Create("12345678900", 500.0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -20,16 +20,19 @@ func TestAccountRepository_Create(t *testing.T) {
 	if acc.DocumentNumber != "12345678900" {
 		t.Errorf("expected document_number 12345678900, got %s", acc.DocumentNumber)
 	}
+	if acc.CreditLimit != 500.0 {
+		t.Errorf("expected credit_limit 500.0, got %f", acc.CreditLimit)
+	}
 }
 
 func TestAccountRepository_Create_DuplicateDocumentNumber(t *testing.T) {
 	db := testutil.NewTestDB(t)
 	repo := NewAccountRepository(db)
 
-	if _, err := repo.Create("12345678900"); err != nil {
+	if _, err := repo.Create("12345678900", 0); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := repo.Create("12345678900"); err == nil {
+	if _, err := repo.Create("12345678900", 0); err == nil {
 		t.Error("expected error on duplicate document_number, got nil")
 	}
 }
@@ -38,7 +41,7 @@ func TestAccountRepository_FindByID(t *testing.T) {
 	db := testutil.NewTestDB(t)
 	repo := NewAccountRepository(db)
 
-	created, err := repo.Create("12345678900")
+	created, err := repo.Create("12345678900", 1000.0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -50,8 +53,8 @@ func TestAccountRepository_FindByID(t *testing.T) {
 	if found.ID != created.ID {
 		t.Errorf("expected id %d, got %d", created.ID, found.ID)
 	}
-	if found.DocumentNumber != created.DocumentNumber {
-		t.Errorf("expected document_number %s, got %s", created.DocumentNumber, found.DocumentNumber)
+	if found.CreditLimit != created.CreditLimit {
+		t.Errorf("expected credit_limit %f, got %f", created.CreditLimit, found.CreditLimit)
 	}
 }
 

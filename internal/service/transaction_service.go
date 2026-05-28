@@ -1,6 +1,7 @@
 package service
 
 import (
+	"database/sql"
 	"errors"
 	"math"
 
@@ -10,6 +11,7 @@ import (
 
 var ErrInvalidAccount = errors.New("account not found")
 var ErrInvalidOperationType = errors.New("operation type not found")
+var ErrInsufficientCredit = errors.New("insufficient credit limit")
 
 // creditVoucherID is the only operation type stored with a positive amount.
 const creditVoucherID = 4
@@ -21,14 +23,20 @@ type TransactionService interface {
 type transactionService struct {
 	txRepo      repository.TransactionRepository
 	accountRepo repository.AccountRepository
+	txRunner    repository.TxRunner
 }
 
-func NewTransactionService(txRepo repository.TransactionRepository, accountRepo repository.AccountRepository) TransactionService {
-	return &transactionService{txRepo: txRepo, accountRepo: accountRepo}
+func NewTransactionService(
+	txRepo repository.TransactionRepository,
+	accountRepo repository.AccountRepository,
+	txRunner repository.TxRunner,
+) TransactionService {
+	return &transactionService{txRepo: txRepo, accountRepo: accountRepo, txRunner: txRunner}
 }
 
 func (s *transactionService) CreateTransaction(accountID, operationTypeID int64, amount float64) (*models.Transaction, error) {
-	if _, err := s.accountRepo.FindByID(accountID); err != nil {
+	acc, err := s.accountRepo.FindByID(accountID)
+	if err != nil {
 		return nil, ErrInvalidAccount
 	}
 
@@ -40,7 +48,22 @@ func (s *transactionService) CreateTransaction(accountID, operationTypeID int64,
 		return nil, ErrInvalidOperationType
 	}
 
-	return s.txRepo.Create(accountID, operationTypeID, applySign(operationTypeID, amount))
+	signedAmount := applySign(operationTypeID, amount)
+
+	var result *models.Transaction
+	err = s.txRunner.RunInTx(func(tx *sql.Tx) error {
+		balance, err := s.txRepo.GetBalanceTx(tx, accountID)
+		if err != nil {
+			return err
+		}
+		if balance+signedAmount < -acc.CreditLimit {
+			return ErrInsufficientCredit
+		}
+		result, err = s.txRepo.CreateTx(tx, accountID, operationTypeID, signedAmount)
+		return err
+	})
+
+	return result, err
 }
 
 func applySign(operationTypeID int64, amount float64) float64 {

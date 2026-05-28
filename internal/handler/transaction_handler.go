@@ -32,7 +32,9 @@ func (h *TransactionHandler) Create(w http.ResponseWriter, r *http.Request) {
 	tx, err := h.svc.CreateTransaction(req.AccountID, req.OperationTypeID, req.Amount)
 	if err != nil {
 		switch {
-		case errors.Is(err, service.ErrInvalidAccount), errors.Is(err, service.ErrInvalidOperationType):
+		case errors.Is(err, service.ErrInvalidAccount),
+			errors.Is(err, service.ErrInvalidOperationType),
+			errors.Is(err, service.ErrInsufficientCredit):
 			http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		default:
 			http.Error(w, "internal error", http.StatusInternalServerError)

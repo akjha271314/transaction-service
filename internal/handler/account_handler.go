@@ -19,7 +19,8 @@ func NewAccountHandler(svc service.AccountService) *AccountHandler {
 }
 
 type createAccountRequest struct {
-	DocumentNumber string `json:"document_number"`
+	DocumentNumber string  `json:"document_number"`
+	CreditLimit    float64 `json:"credit_limit"`
 }
 
 func (h *AccountHandler) Create(w http.ResponseWriter, r *http.Request) {
@@ -29,7 +30,7 @@ func (h *AccountHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	account, err := h.svc.CreateAccount(req.DocumentNumber)
+	account, err := h.svc.CreateAccount(req.DocumentNumber, req.CreditLimit)
 	if err != nil {
 		http.Error(w, "could not create account", http.StatusUnprocessableEntity)
 		return
