@@ -5,7 +5,6 @@ import (
 	"errors"
 	"net/http"
 
-	"transaction-service/internal/repository"
 	"transaction-service/internal/service"
 )
 
@@ -46,7 +45,7 @@ func (h *TransactionHandler) Create(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case errors.Is(err, service.ErrInvalidAccount),
 			errors.Is(err, service.ErrInvalidOperationType),
-			errors.Is(err, repository.ErrInsufficientBalance):
+			errors.Is(err, service.ErrInsufficientBalance):
 			http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		default:
 			http.Error(w, "internal error", http.StatusInternalServerError)

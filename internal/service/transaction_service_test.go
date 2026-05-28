@@ -86,7 +86,7 @@ func TestCreateTransaction_InsufficientBalance(t *testing.T) {
 	svc := newSvc(txRepo, insufficientBalanceRepo())
 
 	_, err := svc.CreateTransaction(1, 1, 150.0)
-	if err != repository.ErrInsufficientBalance {
+	if err != ErrInsufficientBalance {
 		t.Errorf("expected ErrInsufficientBalance, got %v", err)
 	}
 }

@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"transaction-service/internal/models"
-	"transaction-service/internal/repository"
 	"transaction-service/internal/service"
 )
 
@@ -96,7 +95,7 @@ func TestCreateTransaction_InvalidOperationType(t *testing.T) {
 func TestCreateTransaction_InsufficientBalance(t *testing.T) {
 	svc := &mockTransactionService{
 		createFn: func(accountID, operationTypeID int64, amount float64) (*models.Transaction, error) {
-			return nil, repository.ErrInsufficientBalance
+			return nil, service.ErrInsufficientBalance
 		},
 	}
 	mux := newTxMux(svc)
