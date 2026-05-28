@@ -4,12 +4,13 @@ import (
 	"database/sql"
 	"net/http"
 
+	"transaction-service/internal/config"
 	"transaction-service/internal/handler"
 	"transaction-service/internal/repository"
 	"transaction-service/internal/service"
 )
 
-func New(db *sql.DB) http.Handler {
+func New(db *sql.DB, cfg *config.Config) http.Handler {
 	accountRepo := repository.NewAccountRepository(db)
 	txRepo := repository.NewTransactionRepository(db)
 
@@ -19,16 +20,16 @@ func New(db *sql.DB) http.Handler {
 	accountHandler := handler.NewAccountHandler(accountSvc)
 	txHandler := handler.NewTransactionHandler(txSvc)
 
-	mux := http.NewServeMux()
+	protected := http.NewServeMux()
+	protected.HandleFunc("POST /accounts", accountHandler.Create)
+	protected.HandleFunc("GET /accounts/{accountId}", accountHandler.GetByID)
+	protected.HandleFunc("POST /transactions", txHandler.Create)
 
-	mux.HandleFunc("GET /health", health)
+	top := http.NewServeMux()
+	top.HandleFunc("GET /health", health)
+	top.Handle("/", apiKeyMiddleware(cfg.APIKey, protected))
 
-	mux.HandleFunc("POST /accounts", accountHandler.Create)
-	mux.HandleFunc("GET /accounts/{accountId}", accountHandler.GetByID)
-
-	mux.HandleFunc("POST /transactions", txHandler.Create)
-
-	return mux
+	return top
 }
 
 func health(w http.ResponseWriter, _ *http.Request) {
