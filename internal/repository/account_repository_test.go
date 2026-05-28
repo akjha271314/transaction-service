@@ -20,8 +20,8 @@ func TestAccountRepository_Create(t *testing.T) {
 	if acc.DocumentNumber != "12345678900" {
 		t.Errorf("expected document_number 12345678900, got %s", acc.DocumentNumber)
 	}
-	if acc.CreditLimit != 500.0 {
-		t.Errorf("expected credit_limit 500.0, got %f", acc.CreditLimit)
+	if acc.Balance != 500.0 {
+		t.Errorf("expected balance 500.0, got %f", acc.Balance)
 	}
 }
 
@@ -53,8 +53,8 @@ func TestAccountRepository_FindByID(t *testing.T) {
 	if found.ID != created.ID {
 		t.Errorf("expected id %d, got %d", created.ID, found.ID)
 	}
-	if found.CreditLimit != created.CreditLimit {
-		t.Errorf("expected credit_limit %f, got %f", created.CreditLimit, found.CreditLimit)
+	if found.Balance != created.Balance {
+		t.Errorf("expected balance %f, got %f", created.Balance, found.Balance)
 	}
 }
 
@@ -68,7 +68,7 @@ func TestAccountRepository_FindByID_NotFound(t *testing.T) {
 	}
 }
 
-func TestAccountRepository_UpdateCreditLimit(t *testing.T) {
+func TestAccountRepository_UpdateBalanceTx_Debit(t *testing.T) {
 	db := testutil.NewTestDB(t)
 	repo := NewAccountRepository(db)
 
@@ -77,21 +77,57 @@ func TestAccountRepository_UpdateCreditLimit(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	updated, err := repo.UpdateCreditLimit(acc.ID, 500.0)
-	if err != nil {
+	tx, _ := db.Begin()
+	defer tx.Rollback()
+
+	if err := repo.UpdateBalanceTx(tx, acc.ID, -40.0); err != nil {
 		t.Fatal(err)
 	}
-	if updated.CreditLimit != 500.0 {
-		t.Errorf("expected credit_limit 500.0, got %f", updated.CreditLimit)
+	tx.Commit()
+
+	updated, _ := repo.FindByID(acc.ID)
+	if updated.Balance != 60.0 {
+		t.Errorf("expected balance 60.0, got %f", updated.Balance)
 	}
 }
 
-func TestAccountRepository_UpdateCreditLimit_NotFound(t *testing.T) {
+func TestAccountRepository_UpdateBalanceTx_InsufficientBalance(t *testing.T) {
 	db := testutil.NewTestDB(t)
 	repo := NewAccountRepository(db)
 
-	_, err := repo.UpdateCreditLimit(999, 500.0)
-	if err != ErrNotFound {
-		t.Errorf("expected ErrNotFound, got %v", err)
+	acc, err := repo.Create("12345678900", 30.0)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tx, _ := db.Begin()
+	defer tx.Rollback()
+
+	err = repo.UpdateBalanceTx(tx, acc.ID, -50.0)
+	if err != ErrInsufficientBalance {
+		t.Errorf("expected ErrInsufficientBalance, got %v", err)
+	}
+}
+
+func TestAccountRepository_UpdateBalanceTx_Credit(t *testing.T) {
+	db := testutil.NewTestDB(t)
+	repo := NewAccountRepository(db)
+
+	acc, err := repo.Create("12345678900", 0.0)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tx, _ := db.Begin()
+	defer tx.Rollback()
+
+	if err := repo.UpdateBalanceTx(tx, acc.ID, 100.0); err != nil {
+		t.Fatal(err)
+	}
+	tx.Commit()
+
+	updated, _ := repo.FindByID(acc.ID)
+	if updated.Balance != 100.0 {
+		t.Errorf("expected balance 100.0, got %f", updated.Balance)
 	}
 }

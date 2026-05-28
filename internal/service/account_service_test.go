@@ -10,8 +10,8 @@ import (
 
 func TestCreateAccount(t *testing.T) {
 	repo := &mockAccountRepo{
-		createFn: func(documentNumber string, creditLimit float64) (*models.Account, error) {
-			return &models.Account{ID: 1, DocumentNumber: documentNumber, CreditLimit: creditLimit}, nil
+		createFn: func(documentNumber string, balance float64) (*models.Account, error) {
+			return &models.Account{ID: 1, DocumentNumber: documentNumber, Balance: balance}, nil
 		},
 	}
 	svc := NewAccountService(repo)
@@ -23,8 +23,8 @@ func TestCreateAccount(t *testing.T) {
 	if acc.DocumentNumber != "12345678900" {
 		t.Errorf("expected document_number 12345678900, got %s", acc.DocumentNumber)
 	}
-	if acc.CreditLimit != 500.0 {
-		t.Errorf("expected credit_limit 500.0, got %f", acc.CreditLimit)
+	if acc.Balance != 500.0 {
+		t.Errorf("expected balance 500.0, got %f", acc.Balance)
 	}
 }
 

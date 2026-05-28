@@ -9,7 +9,6 @@ import (
 
 type TransactionRepository interface {
 	CreateTx(tx *sql.Tx, accountID, operationTypeID int64, amount float64) (*models.Transaction, error)
-	GetBalanceTx(tx *sql.Tx, accountID int64) (float64, error)
 	OperationTypeExists(id int64) (bool, error)
 }
 
@@ -41,14 +40,6 @@ func (r *transactionRepository) CreateTx(tx *sql.Tx, accountID, operationTypeID 
 		Amount:          amount,
 		EventDate:       eventDate,
 	}, nil
-}
-
-func (r *transactionRepository) GetBalanceTx(tx *sql.Tx, accountID int64) (float64, error) {
-	var balance float64
-	err := tx.QueryRow(
-		"SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE account_id = ?", accountID,
-	).Scan(&balance)
-	return balance, err
 }
 
 func (r *transactionRepository) OperationTypeExists(id int64) (bool, error) {

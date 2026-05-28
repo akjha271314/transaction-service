@@ -26,7 +26,6 @@ func New(db *sql.DB, cfg *config.Config) http.Handler {
 	protected := http.NewServeMux()
 	protected.HandleFunc("POST /accounts", accountHandler.Create)
 	protected.HandleFunc("GET /accounts/{accountId}", accountHandler.GetByID)
-	protected.HandleFunc("PATCH /accounts/{accountId}", accountHandler.UpdateCreditLimit)
 	protected.HandleFunc("POST /transactions", txHandler.Create)
 
 	top := http.NewServeMux()

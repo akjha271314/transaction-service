@@ -8,11 +8,12 @@ import (
 )
 
 var ErrNotFound = errors.New("not found")
+var ErrInsufficientBalance = errors.New("insufficient balance")
 
 type AccountRepository interface {
-	Create(documentNumber string, creditLimit float64) (*models.Account, error)
+	Create(documentNumber string, balance float64) (*models.Account, error)
 	FindByID(id int64) (*models.Account, error)
-	UpdateCreditLimit(id int64, creditLimit float64) (*models.Account, error)
+	UpdateBalanceTx(tx *sql.Tx, accountID int64, delta float64) error
 }
 
 type accountRepository struct {
@@ -23,10 +24,10 @@ func NewAccountRepository(db *sql.DB) AccountRepository {
 	return &accountRepository{db: db}
 }
 
-func (r *accountRepository) Create(documentNumber string, creditLimit float64) (*models.Account, error) {
+func (r *accountRepository) Create(documentNumber string, balance float64) (*models.Account, error) {
 	result, err := r.db.Exec(
-		"INSERT INTO accounts (document_number, credit_limit) VALUES (?, ?)",
-		documentNumber, creditLimit,
+		"INSERT INTO accounts (document_number, balance) VALUES (?, ?)",
+		documentNumber, balance,
 	)
 	if err != nil {
 		return nil, err
@@ -35,37 +36,40 @@ func (r *accountRepository) Create(documentNumber string, creditLimit float64) (
 	if err != nil {
 		return nil, err
 	}
-	return &models.Account{ID: id, DocumentNumber: documentNumber, CreditLimit: creditLimit}, nil
-}
-
-func (r *accountRepository) UpdateCreditLimit(id int64, creditLimit float64) (*models.Account, error) {
-	result, err := r.db.Exec(
-		"UPDATE accounts SET credit_limit = ? WHERE account_id = ?",
-		creditLimit, id,
-	)
-	if err != nil {
-		return nil, err
-	}
-	rows, err := result.RowsAffected()
-	if err != nil {
-		return nil, err
-	}
-	if rows == 0 {
-		return nil, ErrNotFound
-	}
-	return r.FindByID(id)
+	return &models.Account{ID: id, DocumentNumber: documentNumber, Balance: balance}, nil
 }
 
 func (r *accountRepository) FindByID(id int64) (*models.Account, error) {
 	row := r.db.QueryRow(
-		"SELECT account_id, document_number, credit_limit FROM accounts WHERE account_id = ?", id,
+		"SELECT account_id, document_number, balance FROM accounts WHERE account_id = ?", id,
 	)
 	var acc models.Account
-	if err := row.Scan(&acc.ID, &acc.DocumentNumber, &acc.CreditLimit); err != nil {
+	if err := row.Scan(&acc.ID, &acc.DocumentNumber, &acc.Balance); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNotFound
 		}
 		return nil, err
 	}
 	return &acc, nil
+}
+
+// UpdateBalanceTx atomically applies delta to the account balance within an existing
+// transaction. The WHERE clause enforces balance >= 0, so a single affected row
+// confirms both existence and sufficient funds — no separate read needed.
+func (r *accountRepository) UpdateBalanceTx(tx *sql.Tx, accountID int64, delta float64) error {
+	result, err := tx.Exec(
+		"UPDATE accounts SET balance = balance + ? WHERE account_id = ? AND balance + ? >= 0",
+		delta, accountID, delta,
+	)
+	if err != nil {
+		return err
+	}
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return ErrInsufficientBalance
+	}
+	return nil
 }

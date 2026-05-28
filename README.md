@@ -108,14 +108,14 @@ POST /accounts
 
 **Request**
 ```json
-{ "document_number": "12345678900", "credit_limit": 500.0 }
+{ "document_number": "12345678900", "balance": 500.0 }
 ```
 
-`credit_limit` is optional and defaults to `0`. An account with `credit_limit: 0` is valid — it means no credit has been extended yet.
+`balance` is the initial available funds and defaults to `0`. Must be `>= 0`. Balance changes with every transaction — it is not a static limit.
 
 **Response** `201 Created`
 ```json
-{ "account_id": 1, "document_number": "12345678900", "credit_limit": 500.0 }
+{ "account_id": 1, "document_number": "12345678900", "balance": 500.0 }
 ```
 
 ---
@@ -128,32 +128,12 @@ GET /accounts/:accountId
 
 **Response** `200 OK`
 ```json
-{ "account_id": 1, "document_number": "12345678900", "credit_limit": 500.0 }
+{ "account_id": 1, "document_number": "12345678900", "balance": 460.0 }
 ```
+
+`balance` reflects the current available funds at the time of the request.
 
 Returns `404` if the account does not exist.
-
----
-
-### Update credit limit
-
-```
-PATCH /accounts/:accountId
-```
-
-Updates only the `credit_limit` of an existing account. Must be `>= 0`.
-
-**Request**
-```json
-{ "credit_limit": 1000.0 }
-```
-
-**Response** `200 OK`
-```json
-{ "account_id": 1, "document_number": "12345678900", "credit_limit": 1000.0 }
-```
-
-Returns `400` if the value is negative, `404` if the account does not exist.
 
 ---
 
@@ -193,6 +173,8 @@ Returns `422` if the account or operation type does not exist, or if the transac
 | 4  | Credit Voucher (positive)             |
 
 Purchases and withdrawals are always stored with **negative** amounts; credit vouchers with **positive** amounts — regardless of the sign sent in the request.
+
+Each transaction atomically updates the account `balance`. A transaction is rejected with `422` if it would bring the balance below `0`. To add funds, create a credit voucher transaction.
 
 ---
 

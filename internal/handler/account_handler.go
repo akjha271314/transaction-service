@@ -20,7 +20,7 @@ func NewAccountHandler(svc service.AccountService) *AccountHandler {
 
 type CreateAccountRequest struct {
 	DocumentNumber string  `json:"document_number"`
-	CreditLimit    float64 `json:"credit_limit"`
+	Balance        float64 `json:"balance"`
 }
 
 // Create godoc
@@ -40,8 +40,12 @@ func (h *AccountHandler) Create(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid request body", http.StatusBadRequest)
 		return
 	}
+	if req.Balance < 0 {
+		http.Error(w, "balance must not be negative", http.StatusBadRequest)
+		return
+	}
 
-	account, err := h.svc.CreateAccount(req.DocumentNumber, req.CreditLimit)
+	account, err := h.svc.CreateAccount(req.DocumentNumber, req.Balance)
 	if err != nil {
 		http.Error(w, "could not create account", http.StatusUnprocessableEntity)
 		return
@@ -49,49 +53,6 @@ func (h *AccountHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(account)
-}
-
-type UpdateCreditLimitRequest struct {
-	CreditLimit float64 `json:"credit_limit"`
-}
-
-// UpdateCreditLimit godoc
-// @Summary      Update credit limit
-// @Tags         accounts
-// @Accept       json
-// @Produce      json
-// @Param        accountId path  int                      true "Account ID"
-// @Param        request   body  UpdateCreditLimitRequest true "New credit limit"
-// @Success      200       {object} models.Account
-// @Failure      400       {string} string "invalid request body"
-// @Failure      404       {string} string "account not found"
-// @Security     ApiKeyAuth
-// @Router       /accounts/{accountId} [patch]
-func (h *AccountHandler) UpdateCreditLimit(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.ParseInt(r.PathValue("accountId"), 10, 64)
-	if err != nil {
-		http.Error(w, "invalid account id", http.StatusBadRequest)
-		return
-	}
-
-	var req UpdateCreditLimitRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.CreditLimit < 0 {
-		http.Error(w, "invalid request body", http.StatusBadRequest)
-		return
-	}
-
-	account, err := h.svc.UpdateCreditLimit(id, req.CreditLimit)
-	if err != nil {
-		if errors.Is(err, repository.ErrNotFound) {
-			http.Error(w, "account not found", http.StatusNotFound)
-			return
-		}
-		http.Error(w, "internal error", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(account)
 }
 

@@ -6,9 +6,8 @@ import (
 )
 
 type AccountService interface {
-	CreateAccount(documentNumber string, creditLimit float64) (*models.Account, error)
+	CreateAccount(documentNumber string, balance float64) (*models.Account, error)
 	GetAccount(id int64) (*models.Account, error)
-	UpdateCreditLimit(id int64, creditLimit float64) (*models.Account, error)
 }
 
 type accountService struct {
@@ -19,14 +18,10 @@ func NewAccountService(repo repository.AccountRepository) AccountService {
 	return &accountService{repo: repo}
 }
 
-func (s *accountService) CreateAccount(documentNumber string, creditLimit float64) (*models.Account, error) {
-	return s.repo.Create(documentNumber, creditLimit)
+func (s *accountService) CreateAccount(documentNumber string, balance float64) (*models.Account, error) {
+	return s.repo.Create(documentNumber, balance)
 }
 
 func (s *accountService) GetAccount(id int64) (*models.Account, error) {
 	return s.repo.FindByID(id)
-}
-
-func (s *accountService) UpdateCreditLimit(id int64, creditLimit float64) (*models.Account, error) {
-	return s.repo.UpdateCreditLimit(id, creditLimit)
 }

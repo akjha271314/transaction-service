@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"transaction-service/internal/models"
+	"transaction-service/internal/repository"
 	"transaction-service/internal/service"
 )
 
@@ -83,6 +84,24 @@ func TestCreateTransaction_InvalidOperationType(t *testing.T) {
 	mux := newTxMux(svc)
 
 	body := `{"account_id":1,"operation_type_id":99,"amount":50.0}`
+	req := httptest.NewRequest(http.MethodPost, "/transactions", bytes.NewBufferString(body))
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+
+	if w.Code != http.StatusUnprocessableEntity {
+		t.Errorf("expected 422, got %d", w.Code)
+	}
+}
+
+func TestCreateTransaction_InsufficientBalance(t *testing.T) {
+	svc := &mockTransactionService{
+		createFn: func(accountID, operationTypeID int64, amount float64) (*models.Transaction, error) {
+			return nil, repository.ErrInsufficientBalance
+		},
+	}
+	mux := newTxMux(svc)
+
+	body := `{"account_id":1,"operation_type_id":1,"amount":9999}`
 	req := httptest.NewRequest(http.MethodPost, "/transactions", bytes.NewBufferString(body))
 	w := httptest.NewRecorder()
 	mux.ServeHTTP(w, req)

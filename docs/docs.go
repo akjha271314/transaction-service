@@ -108,61 +108,6 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
-            "patch": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "accounts"
-                ],
-                "summary": "Update credit limit",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Account ID",
-                        "name": "accountId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "New credit limit",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handler.UpdateCreditLimitRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.Account"
-                        }
-                    },
-                    "400": {
-                        "description": "invalid request body",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "404": {
-                        "description": "account not found",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
             }
         },
         "/transactions": {
@@ -207,7 +152,7 @@ const docTemplate = `{
                         }
                     },
                     "422": {
-                        "description": "account not found / operation type not found / insufficient credit limit",
+                        "description": "account not found / operation type not found / insufficient balance",
                         "schema": {
                             "type": "string"
                         }
@@ -220,7 +165,7 @@ const docTemplate = `{
         "handler.CreateAccountRequest": {
             "type": "object",
             "properties": {
-                "credit_limit": {
+                "balance": {
                     "type": "number"
                 },
                 "document_number": {
@@ -242,21 +187,13 @@ const docTemplate = `{
                 }
             }
         },
-        "handler.UpdateCreditLimitRequest": {
-            "type": "object",
-            "properties": {
-                "credit_limit": {
-                    "type": "number"
-                }
-            }
-        },
         "models.Account": {
             "type": "object",
             "properties": {
                 "account_id": {
                     "type": "integer"
                 },
-                "credit_limit": {
+                "balance": {
                     "type": "number"
                 },
                 "document_number": {

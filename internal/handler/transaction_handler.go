@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 
+	"transaction-service/internal/repository"
 	"transaction-service/internal/service"
 )
 
@@ -30,7 +31,7 @@ type CreateTransactionRequest struct {
 // @Param        request body CreateTransactionRequest true "Transaction details"
 // @Success      201 {object} models.Transaction
 // @Failure      400 {string} string "invalid request body"
-// @Failure      422 {string} string "account not found / operation type not found / insufficient credit limit"
+// @Failure      422 {string} string "account not found / operation type not found / insufficient balance"
 // @Security     ApiKeyAuth
 // @Router       /transactions [post]
 func (h *TransactionHandler) Create(w http.ResponseWriter, r *http.Request) {
@@ -45,7 +46,7 @@ func (h *TransactionHandler) Create(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case errors.Is(err, service.ErrInvalidAccount),
 			errors.Is(err, service.ErrInvalidOperationType),
-			errors.Is(err, service.ErrInsufficientCredit):
+			errors.Is(err, repository.ErrInsufficientBalance):
 			http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		default:
 			http.Error(w, "internal error", http.StatusInternalServerError)

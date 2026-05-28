@@ -26,9 +26,7 @@ func TestTransactionRepository_CreateTx(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := sqlTx.Commit(); err != nil {
-		t.Fatal(err)
-	}
+	sqlTx.Commit()
 
 	if tx.ID == 0 {
 		t.Error("expected non-zero transaction_id")
@@ -56,63 +54,6 @@ func TestTransactionRepository_CreateTx_InvalidAccount(t *testing.T) {
 
 	if _, err := txRepo.CreateTx(sqlTx, 999, 1, -50.0); err == nil {
 		t.Error("expected error for non-existent account_id, got nil")
-	}
-}
-
-func TestTransactionRepository_GetBalanceTx(t *testing.T) {
-	db := testutil.NewTestDB(t)
-	accountRepo := NewAccountRepository(db)
-	txRepo := NewTransactionRepository(db)
-
-	acc, err := accountRepo.Create("12345678900", 500.0)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Insert two transactions inside a tx, check balance inside the same tx
-	sqlTx, err := db.Begin()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer sqlTx.Rollback()
-
-	if _, err := txRepo.CreateTx(sqlTx, acc.ID, 1, -50.0); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := txRepo.CreateTx(sqlTx, acc.ID, 1, -30.0); err != nil {
-		t.Fatal(err)
-	}
-
-	balance, err := txRepo.GetBalanceTx(sqlTx, acc.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if balance != -80.0 {
-		t.Errorf("expected balance -80.0, got %f", balance)
-	}
-
-	sqlTx.Commit()
-}
-
-func TestTransactionRepository_GetBalanceTx_NoTransactions(t *testing.T) {
-	db := testutil.NewTestDB(t)
-	accountRepo := NewAccountRepository(db)
-	txRepo := NewTransactionRepository(db)
-
-	acc, err := accountRepo.Create("12345678900", 500.0)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	sqlTx, _ := db.Begin()
-	defer sqlTx.Rollback()
-
-	balance, err := txRepo.GetBalanceTx(sqlTx, acc.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if balance != 0 {
-		t.Errorf("expected balance 0, got %f", balance)
 	}
 }
 

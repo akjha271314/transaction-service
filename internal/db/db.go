@@ -29,7 +29,7 @@ func migrate(db *sql.DB) error {
 		CREATE TABLE IF NOT EXISTS accounts (
 			account_id      INTEGER PRIMARY KEY AUTOINCREMENT,
 			document_number TEXT    NOT NULL UNIQUE,
-			credit_limit    REAL    NOT NULL DEFAULT 0
+			balance         REAL    NOT NULL DEFAULT 0
 		);
 
 		CREATE TABLE IF NOT EXISTS operation_types (
