@@ -11,6 +11,23 @@ A REST API service for managing cardholder accounts and their transactions.
 
 ---
 
+## Configuration
+
+All configuration is read from environment variables. Copy `.env.example` to `.env` and set the values before running locally.
+
+```bash
+cp .env.example .env
+```
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `API_KEY` | Yes | — | Secret key sent by clients in the `X-API-Key` header |
+| `PORT` | No | `8080` | Port the server listens on |
+
+In production, set these variables directly in your environment — no `.env` file is needed.
+
+---
+
 ## Running the service
 
 ### Option 1 — Go directly
@@ -31,7 +48,7 @@ go run .
 docker compose up --build
 ```
 
-The server starts on **port 8080**.
+The server starts on the port defined by `PORT` (default `8080`).
 
 ---
 
@@ -44,6 +61,26 @@ go test ./...
 ---
 
 ## API
+
+All endpoints except `/health` require an `X-API-Key` header:
+
+```
+X-API-Key: your-secret-api-key
+```
+
+Returns `401 Unauthorized` if the header is missing or incorrect.
+
+---
+
+### Health check
+
+```
+GET /health
+```
+
+**Response** `200 OK` — no authentication required.
+
+---
 
 ### Create an account
 
@@ -122,11 +159,14 @@ Purchases and withdrawals are always stored with **negative** amounts; credit vo
 ```
 main.go
 internal/
+  config/      — Environment variable loading
   db/          — SQLite in-memory setup & migrations
   models/      — Account, Transaction structs
   repository/  — Database access layer
   service/     — Business logic (amount sign enforcement, validation)
   handler/     — HTTP request/response layer
+  router/      — Route definitions and API key middleware
+  testutil/    — Shared test helpers
 ```
 
 Data is stored in-memory (SQLite `:memory:`) and resets on each restart.
