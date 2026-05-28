@@ -1,3 +1,12 @@
+// @title           Transaction Service API
+// @version         1.0
+// @description     A service for managing cardholder accounts and transactions.
+// @host            localhost:8080
+// @BasePath        /
+// @securityDefinitions.apikey ApiKeyAuth
+// @in              header
+// @name            X-API-Key
+
 package main
 
 import (
@@ -6,6 +15,7 @@ import (
 
 	"github.com/joho/godotenv"
 
+	_ "transaction-service/docs"
 	"transaction-service/internal/config"
 	"transaction-service/internal/db"
 	"transaction-service/internal/router"

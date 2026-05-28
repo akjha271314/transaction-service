@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"net/http"
 
+	httpSwagger "github.com/swaggo/http-swagger"
+
 	"transaction-service/internal/config"
 	"transaction-service/internal/handler"
 	"transaction-service/internal/repository"
@@ -28,6 +30,7 @@ func New(db *sql.DB, cfg *config.Config) http.Handler {
 
 	top := http.NewServeMux()
 	top.HandleFunc("GET /health", health)
+	top.Handle("/swagger/", httpSwagger.WrapHandler)
 	top.Handle("/", apiKeyMiddleware(cfg.APIKey, protected))
 
 	return top

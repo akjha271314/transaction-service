@@ -52,6 +52,24 @@ The server starts on the port defined by `PORT` (default `8080`).
 
 ---
 
+## Swagger UI
+
+Once the server is running, open:
+
+```
+http://localhost:8080/swagger/index.html
+```
+
+The Swagger UI is available without authentication. Use the **Authorize** button to set your `X-API-Key` before trying out the protected endpoints.
+
+To regenerate the docs after changing handler annotations:
+
+```bash
+swag init --generalInfo main.go --output docs
+```
+
+---
+
 ## Running tests
 
 ```bash

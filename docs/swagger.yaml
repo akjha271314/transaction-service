@@ -1,0 +1,144 @@
+basePath: /
+definitions:
+  handler.CreateAccountRequest:
+    properties:
+      credit_limit:
+        type: number
+      document_number:
+        type: string
+    type: object
+  handler.CreateTransactionRequest:
+    properties:
+      account_id:
+        type: integer
+      amount:
+        type: number
+      operation_type_id:
+        type: integer
+    type: object
+  models.Account:
+    properties:
+      account_id:
+        type: integer
+      credit_limit:
+        type: number
+      document_number:
+        type: string
+    type: object
+  models.Transaction:
+    properties:
+      account_id:
+        type: integer
+      amount:
+        type: number
+      event_date:
+        type: string
+      operation_type_id:
+        type: integer
+      transaction_id:
+        type: integer
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: A service for managing cardholder accounts and transactions.
+  title: Transaction Service API
+  version: "1.0"
+paths:
+  /accounts:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Account details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.CreateAccountRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Account'
+        "400":
+          description: invalid request body
+          schema:
+            type: string
+        "422":
+          description: could not create account
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Create an account
+      tags:
+      - accounts
+  /accounts/{accountId}:
+    get:
+      parameters:
+      - description: Account ID
+        in: path
+        name: accountId
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Account'
+        "400":
+          description: invalid account id
+          schema:
+            type: string
+        "404":
+          description: account not found
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Get an account
+      tags:
+      - accounts
+  /transactions:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Transaction details
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handler.CreateTransactionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Transaction'
+        "400":
+          description: invalid request body
+          schema:
+            type: string
+        "422":
+          description: account not found / operation type not found / insufficient
+            credit limit
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: Create a transaction
+      tags:
+      - transactions
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: X-API-Key
+    type: apiKey
+swagger: "2.0"

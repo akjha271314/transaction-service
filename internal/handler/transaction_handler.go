@@ -16,14 +16,25 @@ func NewTransactionHandler(svc service.TransactionService) *TransactionHandler {
 	return &TransactionHandler{svc: svc}
 }
 
-type createTransactionRequest struct {
+type CreateTransactionRequest struct {
 	AccountID       int64   `json:"account_id"`
 	OperationTypeID int64   `json:"operation_type_id"`
 	Amount          float64 `json:"amount"`
 }
 
+// Create godoc
+// @Summary      Create a transaction
+// @Tags         transactions
+// @Accept       json
+// @Produce      json
+// @Param        request body CreateTransactionRequest true "Transaction details"
+// @Success      201 {object} models.Transaction
+// @Failure      400 {string} string "invalid request body"
+// @Failure      422 {string} string "account not found / operation type not found / insufficient credit limit"
+// @Security     ApiKeyAuth
+// @Router       /transactions [post]
 func (h *TransactionHandler) Create(w http.ResponseWriter, r *http.Request) {
-	var req createTransactionRequest
+	var req CreateTransactionRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "invalid request body", http.StatusBadRequest)
 		return
