@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"strconv"
 
-	"transaction-service/internal/repository"
 	"transaction-service/internal/service"
 )
 
@@ -30,8 +29,8 @@ type CreateAccountRequest struct {
 // @Produce      json
 // @Param        request body CreateAccountRequest true "Account details"
 // @Success      201 {object} models.Account
-// @Failure      400 {string} string "invalid request body"
-// @Failure      422 {string} string "could not create account"
+// @Failure      400 {string} string "invalid request body / balance must not be negative"
+// @Failure      409 {string} string "account with this document number already exists"
 // @Security     ApiKeyAuth
 // @Router       /accounts [post]
 func (h *AccountHandler) Create(w http.ResponseWriter, r *http.Request) {
@@ -47,7 +46,11 @@ func (h *AccountHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 	account, err := h.svc.CreateAccount(req.DocumentNumber, req.Balance)
 	if err != nil {
-		http.Error(w, "could not create account", http.StatusUnprocessableEntity)
+		if errors.Is(err, service.ErrDuplicateAccount) {
+			http.Error(w, err.Error(), http.StatusConflict)
+			return
+		}
+		http.Error(w, "could not create account", http.StatusInternalServerError)
 		return
 	}
 
@@ -75,8 +78,8 @@ func (h *AccountHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 
 	account, err := h.svc.GetAccount(id)
 	if err != nil {
-		if errors.Is(err, repository.ErrNotFound) {
-			http.Error(w, "account not found", http.StatusNotFound)
+		if errors.Is(err, service.ErrAccountNotFound) {
+			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
 		http.Error(w, "internal error", http.StatusInternalServerError)

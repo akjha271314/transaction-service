@@ -3,42 +3,45 @@ package repository
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"transaction-service/internal/testutil"
 )
 
 func TestTransactionRepository_CreateTx(t *testing.T) {
-	db := testutil.NewTestDB(t)
-	accountRepo := NewAccountRepository(db)
-	txRepo := NewTransactionRepository(db)
-
-	acc, err := accountRepo.Create("12345678900", 500.0)
-	if err != nil {
-		t.Fatal(err)
+	tests := []struct {
+		name            string
+		operationTypeID int64
+		amount          float64
+	}{
+		{"purchase (negative amount)", 1, -50.0},
+		{"credit voucher (positive amount)", 4, 60.0},
 	}
 
-	sqlTx, err := db.Begin()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer sqlTx.Rollback()
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			db := testutil.NewTestDB(t)
+			accountRepo := NewAccountRepository(db)
+			txRepo := NewTransactionRepository(db)
 
-	tx, err := txRepo.CreateTx(sqlTx, acc.ID, 1, -50.0)
-	if err != nil {
-		t.Fatal(err)
-	}
-	sqlTx.Commit()
+			acc, err := accountRepo.Create("12345678900", 500.0)
+			require.NoError(t, err)
 
-	if tx.ID == 0 {
-		t.Error("expected non-zero transaction_id")
-	}
-	if tx.AccountID != acc.ID {
-		t.Errorf("expected account_id %d, got %d", acc.ID, tx.AccountID)
-	}
-	if tx.Amount != -50.0 {
-		t.Errorf("expected amount -50.0, got %f", tx.Amount)
-	}
-	if tx.EventDate.IsZero() {
-		t.Error("expected non-zero event_date")
+			sqlTx, err := db.Begin()
+			require.NoError(t, err)
+			defer sqlTx.Rollback()
+
+			tx, err := txRepo.CreateTx(sqlTx, acc.ID, tc.operationTypeID, tc.amount)
+			require.NoError(t, err)
+			sqlTx.Commit()
+
+			assert.NotZero(t, tx.ID)
+			assert.Equal(t, acc.ID, tx.AccountID)
+			assert.Equal(t, tc.operationTypeID, tx.OperationTypeID)
+			assert.Equal(t, tc.amount, tx.Amount)
+			assert.False(t, tx.EventDate.IsZero())
+		})
 	}
 }
 
@@ -47,37 +50,37 @@ func TestTransactionRepository_CreateTx_InvalidAccount(t *testing.T) {
 	txRepo := NewTransactionRepository(db)
 
 	sqlTx, err := db.Begin()
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	defer sqlTx.Rollback()
 
-	if _, err := txRepo.CreateTx(sqlTx, 999, 1, -50.0); err == nil {
-		t.Error("expected error for non-existent account_id, got nil")
-	}
+	_, err = txRepo.CreateTx(sqlTx, 999, 1, -50.0)
+	assert.Error(t, err)
 }
 
 func TestTransactionRepository_FindOperationType(t *testing.T) {
+	tests := []struct {
+		id          int64
+		description string
+		isCredit    bool
+	}{
+		{1, "Normal Purchase", false},
+		{2, "Purchase with installments", false},
+		{3, "Withdrawal", false},
+		{4, "Credit Voucher", true},
+	}
+
 	db := testutil.NewTestDB(t)
 	txRepo := NewTransactionRepository(db)
 
-	cases := []struct {
-		id       int64
-		isCredit bool
-	}{
-		{1, false},
-		{2, false},
-		{3, false},
-		{4, true},
-	}
-	for _, tc := range cases {
-		op, err := txRepo.FindOperationType(tc.id)
-		if err != nil {
-			t.Fatalf("operation_type_id %d: %v", tc.id, err)
-		}
-		if op.IsCredit != tc.isCredit {
-			t.Errorf("operation_type_id %d: expected is_credit=%v, got %v", tc.id, tc.isCredit, op.IsCredit)
-		}
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			op, err := txRepo.FindOperationType(tc.id)
+
+			require.NoError(t, err)
+			assert.Equal(t, tc.id, op.ID)
+			assert.Equal(t, tc.description, op.Description)
+			assert.Equal(t, tc.isCredit, op.IsCredit)
+		})
 	}
 }
 
@@ -86,7 +89,5 @@ func TestTransactionRepository_FindOperationType_NotFound(t *testing.T) {
 	txRepo := NewTransactionRepository(db)
 
 	_, err := txRepo.FindOperationType(99)
-	if err != ErrNotFound {
-		t.Errorf("expected ErrNotFound, got %v", err)
-	}
+	assert.ErrorIs(t, err, ErrNotFound)
 }

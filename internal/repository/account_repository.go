@@ -3,12 +3,14 @@ package repository
 import (
 	"database/sql"
 	"errors"
+	"strings"
 
 	"transaction-service/internal/models"
 )
 
 var ErrNotFound = errors.New("not found")
 var ErrInsufficientBalance = errors.New("insufficient balance")
+var ErrDuplicateAccount = errors.New("account with this document number already exists")
 
 type AccountRepository interface {
 	Create(documentNumber string, balance float64) (*models.Account, error)
@@ -30,6 +32,9 @@ func (r *accountRepository) Create(documentNumber string, balance float64) (*mod
 		documentNumber, balance,
 	)
 	if err != nil {
+		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
+			return nil, ErrDuplicateAccount
+		}
 		return nil, err
 	}
 	id, err := result.LastInsertId()

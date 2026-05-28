@@ -51,13 +51,13 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "invalid request body",
+                        "description": "invalid request body / balance must not be negative",
                         "schema": {
                             "type": "string"
                         }
                     },
-                    "422": {
-                        "description": "could not create account",
+                    "409": {
+                        "description": "account with this document number already exists",
                         "schema": {
                             "type": "string"
                         }

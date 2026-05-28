@@ -118,6 +118,9 @@ POST /accounts
 { "account_id": 1, "document_number": "12345678900", "balance": 500.0 }
 ```
 
+Returns `400` if `document_number` is missing or `balance` is negative.
+Returns `409 Conflict` if an account with the same `document_number` already exists.
+
 ---
 
 ### Get an account
