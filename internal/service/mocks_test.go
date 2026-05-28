@@ -26,16 +26,16 @@ func (m *mockAccountRepo) UpdateBalanceTx(tx *sql.Tx, accountID int64, delta flo
 }
 
 type mockTransactionRepo struct {
-	createTxFn            func(tx *sql.Tx, accountID, operationTypeID int64, amount float64) (*models.Transaction, error)
-	operationTypeExistsFn func(id int64) (bool, error)
+	createTxFn          func(tx *sql.Tx, accountID, operationTypeID int64, amount float64) (*models.Transaction, error)
+	findOperationTypeFn func(id int64) (*models.OperationType, error)
 }
 
 func (m *mockTransactionRepo) CreateTx(tx *sql.Tx, accountID, operationTypeID int64, amount float64) (*models.Transaction, error) {
 	return m.createTxFn(tx, accountID, operationTypeID, amount)
 }
 
-func (m *mockTransactionRepo) OperationTypeExists(id int64) (bool, error) {
-	return m.operationTypeExistsFn(id)
+func (m *mockTransactionRepo) FindOperationType(id int64) (*models.OperationType, error) {
+	return m.findOperationTypeFn(id)
 }
 
 // mockTxRunner calls fn with nil — sufficient for unit tests that mock the DB methods.
@@ -56,7 +56,10 @@ func makeAccountRepo(acc *models.Account, err error) *mockAccountRepo {
 
 func makeTxRepo(stored *float64) *mockTransactionRepo {
 	return &mockTransactionRepo{
-		operationTypeExistsFn: func(id int64) (bool, error) { return true, nil },
+		findOperationTypeFn: func(id int64) (*models.OperationType, error) {
+			isCredit := id == 4
+			return &models.OperationType{ID: id, IsCredit: isCredit}, nil
+		},
 		createTxFn: func(tx *sql.Tx, accountID, operationTypeID int64, amount float64) (*models.Transaction, error) {
 			if stored != nil {
 				*stored = amount

@@ -57,30 +57,36 @@ func TestTransactionRepository_CreateTx_InvalidAccount(t *testing.T) {
 	}
 }
 
-func TestTransactionRepository_OperationTypeExists(t *testing.T) {
+func TestTransactionRepository_FindOperationType(t *testing.T) {
 	db := testutil.NewTestDB(t)
 	txRepo := NewTransactionRepository(db)
 
-	for _, id := range []int64{1, 2, 3, 4} {
-		exists, err := txRepo.OperationTypeExists(id)
+	cases := []struct {
+		id       int64
+		isCredit bool
+	}{
+		{1, false},
+		{2, false},
+		{3, false},
+		{4, true},
+	}
+	for _, tc := range cases {
+		op, err := txRepo.FindOperationType(tc.id)
 		if err != nil {
-			t.Fatalf("operation_type_id %d: %v", id, err)
+			t.Fatalf("operation_type_id %d: %v", tc.id, err)
 		}
-		if !exists {
-			t.Errorf("expected operation_type_id %d to exist", id)
+		if op.IsCredit != tc.isCredit {
+			t.Errorf("operation_type_id %d: expected is_credit=%v, got %v", tc.id, tc.isCredit, op.IsCredit)
 		}
 	}
 }
 
-func TestTransactionRepository_OperationTypeExists_Invalid(t *testing.T) {
+func TestTransactionRepository_FindOperationType_NotFound(t *testing.T) {
 	db := testutil.NewTestDB(t)
 	txRepo := NewTransactionRepository(db)
 
-	exists, err := txRepo.OperationTypeExists(99)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if exists {
-		t.Error("expected operation_type_id 99 to not exist")
+	_, err := txRepo.FindOperationType(99)
+	if err != ErrNotFound {
+		t.Errorf("expected ErrNotFound, got %v", err)
 	}
 }

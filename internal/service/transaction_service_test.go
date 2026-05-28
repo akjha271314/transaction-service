@@ -68,7 +68,7 @@ func TestCreateTransaction_InvalidAccount(t *testing.T) {
 
 func TestCreateTransaction_InvalidOperationType(t *testing.T) {
 	txRepo := &mockTransactionRepo{
-		operationTypeExistsFn: func(id int64) (bool, error) { return false, nil },
+		findOperationTypeFn: func(id int64) (*models.OperationType, error) { return nil, repository.ErrNotFound },
 	}
 	svc := newSvc(txRepo, makeAccountRepo(&models.Account{ID: 1}, nil))
 
@@ -80,8 +80,10 @@ func TestCreateTransaction_InvalidOperationType(t *testing.T) {
 
 func TestCreateTransaction_InsufficientBalance(t *testing.T) {
 	txRepo := &mockTransactionRepo{
-		operationTypeExistsFn: func(id int64) (bool, error) { return true, nil },
-		createTxFn:            func(tx *sql.Tx, a, b int64, c float64) (*models.Transaction, error) { return nil, nil },
+		findOperationTypeFn: func(id int64) (*models.OperationType, error) {
+			return &models.OperationType{ID: id, IsCredit: false}, nil
+		},
+		createTxFn: func(tx *sql.Tx, a, b int64, c float64) (*models.Transaction, error) { return nil, nil },
 	}
 	svc := newSvc(txRepo, insufficientBalanceRepo())
 

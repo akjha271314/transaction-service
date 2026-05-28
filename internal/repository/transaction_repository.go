@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"errors"
 	"time"
 
 	"transaction-service/internal/models"
@@ -9,7 +10,7 @@ import (
 
 type TransactionRepository interface {
 	CreateTx(tx *sql.Tx, accountID, operationTypeID int64, amount float64) (*models.Transaction, error)
-	OperationTypeExists(id int64) (bool, error)
+	FindOperationType(id int64) (*models.OperationType, error)
 }
 
 type transactionRepository struct {
@@ -42,10 +43,16 @@ func (r *transactionRepository) CreateTx(tx *sql.Tx, accountID, operationTypeID 
 	}, nil
 }
 
-func (r *transactionRepository) OperationTypeExists(id int64) (bool, error) {
-	var count int
-	err := r.db.QueryRow(
-		"SELECT COUNT(1) FROM operation_types WHERE operation_type_id = ?", id,
-	).Scan(&count)
-	return count > 0, err
+func (r *transactionRepository) FindOperationType(id int64) (*models.OperationType, error) {
+	row := r.db.QueryRow(
+		"SELECT operation_type_id, description, is_credit FROM operation_types WHERE operation_type_id = ?", id,
+	)
+	var op models.OperationType
+	if err := row.Scan(&op.ID, &op.Description, &op.IsCredit); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+		return nil, err
+	}
+	return &op, nil
 }

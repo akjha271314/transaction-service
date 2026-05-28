@@ -165,14 +165,14 @@ Returns `422` if the account or operation type does not exist, or if the transac
 
 ## Operation types
 
-| ID | Description                           |
-|----|---------------------------------------|
-| 1  | Normal Purchase (negative amount)     |
-| 2  | Purchase with installments (negative) |
-| 3  | Withdrawal (negative)                 |
-| 4  | Credit Voucher (positive)             |
+| ID | Description                | `is_credit` |
+|----|----------------------------|-------------|
+| 1  | Normal Purchase            | false       |
+| 2  | Purchase with installments | false       |
+| 3  | Withdrawal                 | false       |
+| 4  | Credit Voucher             | true        |
 
-Purchases and withdrawals are always stored with **negative** amounts; credit vouchers with **positive** amounts — regardless of the sign sent in the request.
+The `is_credit` flag on each operation type determines the sign of the stored amount — no hardcoded IDs in business logic. Adding a new operation type is a data change only: insert a row into `operation_types` with the correct `is_credit` value.
 
 Each transaction atomically updates the account `balance`. A transaction is rejected with `422` if it would bring the balance below `0`. To add funds, create a credit voucher transaction.
 

@@ -13,9 +13,6 @@ var ErrInvalidAccount = errors.New("account not found")
 var ErrInvalidOperationType = errors.New("operation type not found")
 var ErrInsufficientBalance = errors.New("insufficient balance")
 
-// creditVoucherID is the only operation type stored with a positive amount.
-const creditVoucherID = 4
-
 type TransactionService interface {
 	CreateTransaction(accountID, operationTypeID int64, amount float64) (*models.Transaction, error)
 }
@@ -39,15 +36,15 @@ func (s *transactionService) CreateTransaction(accountID, operationTypeID int64,
 		return nil, ErrInvalidAccount
 	}
 
-	exists, err := s.txRepo.OperationTypeExists(operationTypeID)
+	opType, err := s.txRepo.FindOperationType(operationTypeID)
 	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			return nil, ErrInvalidOperationType
+		}
 		return nil, err
 	}
-	if !exists {
-		return nil, ErrInvalidOperationType
-	}
 
-	signedAmount := applySign(operationTypeID, amount)
+	signedAmount := applySign(opType.IsCredit, amount)
 
 	var result *models.Transaction
 	err = s.txRunner.RunInTx(func(tx *sql.Tx) error {
@@ -64,8 +61,8 @@ func (s *transactionService) CreateTransaction(accountID, operationTypeID int64,
 	return result, err
 }
 
-func applySign(operationTypeID int64, amount float64) float64 {
-	if operationTypeID == creditVoucherID {
+func applySign(isCredit bool, amount float64) float64 {
+	if isCredit {
 		return math.Abs(amount)
 	}
 	return -math.Abs(amount)

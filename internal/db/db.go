@@ -34,7 +34,8 @@ func migrate(db *sql.DB) error {
 
 		CREATE TABLE IF NOT EXISTS operation_types (
 			operation_type_id INTEGER PRIMARY KEY,
-			description       TEXT NOT NULL
+			description       TEXT    NOT NULL,
+			is_credit         BOOLEAN NOT NULL DEFAULT 0
 		);
 
 		CREATE TABLE IF NOT EXISTS transactions (
@@ -50,11 +51,11 @@ func migrate(db *sql.DB) error {
 
 func seed(db *sql.DB) error {
 	_, err := db.Exec(`
-		INSERT INTO operation_types (operation_type_id, description) VALUES
-			(1, 'Normal Purchase'),
-			(2, 'Purchase with installments'),
-			(3, 'Withdrawal'),
-			(4, 'Credit Voucher');
+		INSERT INTO operation_types (operation_type_id, description, is_credit) VALUES
+			(1, 'Normal Purchase',              0),
+			(2, 'Purchase with installments',   0),
+			(3, 'Withdrawal',                   0),
+			(4, 'Credit Voucher',               1);
 	`)
 	return err
 }
